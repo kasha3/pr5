@@ -12,8 +12,9 @@ namespace Client
     {
         private static TcpClient client;
         private static IPAddress IPAddress;
-        private static Guid Token;
-        static void Main(string[] args)
+        private static Guid Token = Guid.Empty;
+
+        static async Task Main(string[] args)
         {
             takeIp:
             {
@@ -49,11 +50,11 @@ namespace Client
 
             while (client.Connected)
             {
-                Task.Run(() => ClientWork());
+                await ClientWork();
             }
             Console.WriteLine("Вы отключены");
-
         }
+
         private static async Task ClientWork()
         {
             var stream = client.GetStream();
@@ -65,8 +66,7 @@ namespace Client
                 id = Token
             };
 
-            byte[] data = new byte[1024];
-            data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(command));
+            byte[] data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(command));
             await stream.WriteAsync(data, 0, data.Length);
 
             byte[] receive = new byte[10000];
@@ -75,7 +75,6 @@ namespace Client
 
             if (commandText.StartsWith("/register"))
             {
-
                 if (message.Contains("token:"))
                 {
                     message = message.Replace("token:", "");

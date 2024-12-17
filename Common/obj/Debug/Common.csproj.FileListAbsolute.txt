@@ -4,3 +4,9 @@ C:\Users\Admin\source\repos\pr5\Common\obj\Debug\Common.csproj.AssemblyReference
 C:\Users\Admin\source\repos\pr5\Common\obj\Debug\Common.csproj.CoreCompileInputs.cache
 C:\Users\Admin\source\repos\pr5\Common\obj\Debug\Common.dll
 C:\Users\Admin\source\repos\pr5\Common\obj\Debug\Common.pdb
+C:\Users\Admin\Desktop\pr5-1\pr5\Common\bin\Debug\Common.dll
+C:\Users\Admin\Desktop\pr5-1\pr5\Common\bin\Debug\Common.pdb
+C:\Users\Admin\Desktop\pr5-1\pr5\Common\obj\Debug\Common.csproj.AssemblyReference.cache
+C:\Users\Admin\Desktop\pr5-1\pr5\Common\obj\Debug\Common.csproj.CoreCompileInputs.cache
+C:\Users\Admin\Desktop\pr5-1\pr5\Common\obj\Debug\Common.dll
+C:\Users\Admin\Desktop\pr5-1\pr5\Common\obj\Debug\Common.pdb

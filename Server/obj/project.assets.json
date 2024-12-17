@@ -3314,11 +3314,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Admin\\source\\repos\\pr5\\Server\\Server.csproj",
+      "projectUniqueName": "C:\\Users\\Admin\\Desktop\\pr5-1\\pr5\\Server\\Server.csproj",
       "projectName": "Server",
-      "projectPath": "C:\\Users\\Admin\\source\\repos\\pr5\\Server\\Server.csproj",
+      "projectPath": "C:\\Users\\Admin\\Desktop\\pr5-1\\pr5\\Server\\Server.csproj",
       "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Admin\\source\\repos\\pr5\\Server\\obj\\",
+      "outputPath": "C:\\Users\\Admin\\Desktop\\pr5-1\\pr5\\Server\\obj\\",
       "projectStyle": "PackageReference",
       "skipContentFileWrite": true,
       "fallbackFolders": [
@@ -3340,8 +3340,8 @@
       "frameworks": {
         "net481": {
           "projectReferences": {
-            "C:\\Users\\Admin\\source\\repos\\pr5\\Common\\Common.csproj": {
-              "projectPath": "C:\\Users\\Admin\\source\\repos\\pr5\\Common\\Common.csproj"
+            "C:\\Users\\Admin\\Desktop\\pr5-1\\pr5\\Common\\Common.csproj": {
+              "projectPath": "C:\\Users\\Admin\\Desktop\\pr5-1\\pr5\\Common\\Common.csproj"
             }
           }
         }

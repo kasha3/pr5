@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Server.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -21,6 +22,7 @@ namespace Server
         public static IPAddress IPAddress;
         public static List<Common.Connection> ActiveUsers = new List<Common.Connection>();
         public static TcpListener ServerListener;
+
         private static void Main(string[] args)
         {
             db = new ApplicationContext(new Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationContext>());
@@ -156,16 +158,35 @@ namespace Server
             try
             {
                 NetworkStream stream = client.GetStream();
-                while (true)
+                while (client.Connected)
                 {
                     byte[] data = new byte[1024];
-                    int bytes = await stream.ReadAsync(data, 0, data.Length);
-                    string message = Encoding.UTF8.GetString(data, 0, bytes).ToLower();
+                    int bytesRead = 0;
+
+                    try
+                    {
+                        bytesRead = await stream.ReadAsync(data, 0, data.Length);
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.WriteLine($"Error reading from client: {ex.Message}");
+                        break;
+                    }
+
+                    if (bytesRead == 0)
+                    {
+                        Console.WriteLine("Client disconnected.");
+                        break;
+                    }
+
+                    string message = Encoding.UTF8.GetString(data, 0, bytesRead).ToLower();
                     Console.WriteLine("User sent: " + message);
+
                     Common.Command command = JsonConvert.DeserializeObject<Common.Command>(message);
                     if (command != null && command.Message != null)
                     {
                         command.Message = command.Message.ToLower();
+
                         if (command.Message.StartsWith("/register"))
                         {
                             string[] userdata = command.Message.Split(' ');
@@ -287,6 +308,15 @@ namespace Server
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex}");
+            }
+            finally
+            {
+                var connection = ActiveUsers.FirstOrDefault(x => x.Client == client);
+                if (connection != null)
+                {
+                    ActiveUsers.Remove(connection);
+                }
+                client.Close();
             }
         }
 
