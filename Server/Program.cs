@@ -300,7 +300,7 @@ namespace Server
                 {
                     return ipAddress;
                 }
-                Console.WriteLine("Ivalid IP Format!");
+                Console.WriteLine("Invalid IP Format!");
             }
         }
 
@@ -328,7 +328,7 @@ namespace Server
                 {
                     return maxClientsNumber;
                 }
-                Console.WriteLine("Ivalid Format!");
+                Console.WriteLine("Invalid Format!");
             }
         }
 
@@ -342,7 +342,7 @@ namespace Server
                 {
                     return disconnectIntervalSeconds;
                 }
-                Console.WriteLine("Ivalid Format!");
+                Console.WriteLine("Invalid Format!");
             }
         }
     }

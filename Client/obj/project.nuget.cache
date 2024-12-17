@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "dgSpecHash": "XP2yCL2ykaVgjto2BDh/tkGRqgOaybxgWOeull35Y4m0eVTkzTh2EW6YkRF1/SmGnK/kdHbwZJtBxkKG+7K8AA==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Admin\\Desktop\\pr5-1\\pr5\\Client\\Client.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Admin\\.nuget\\packages\\newtonsoft.json\\11.0.2\\newtonsoft.json.11.0.2.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "У пакета \"Newtonsoft.Json\" 11.0.2 есть известная уязвимость https://github.com/advisories/GHSA-5crp-9r3c-p9vr (уровень серьезности: высокий уровень)",
+      "libraryId": "Newtonsoft.Json",
+      "targetGraphs": [
+        ".NETFramework,Version=v4.8.1",
+        ".NETFramework,Version=v4.8.1/win",
+        ".NETFramework,Version=v4.8.1/win-arm64",
+        ".NETFramework,Version=v4.8.1/win-x64",
+        ".NETFramework,Version=v4.8.1/win-x86"
+      ]
+    }
+  ]
+}
