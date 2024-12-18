@@ -20,7 +20,7 @@ namespace Server
         private static int Port;
         public static ApplicationContext db;
         public static IPAddress IPAddress;
-        public static List<Common.Connection> ActiveUsers = new List<Common.Connection>();
+        public static List<Connection> ActiveUsers = new List<Connection>();
         public static TcpListener ServerListener;
 
         private static void Main(string[] args)
@@ -83,19 +83,28 @@ namespace Server
                     {
                         if (command.Length < 6)
                         {
-                            Console.WriteLine("Using /kick with login!");
+                            Console.WriteLine("Using /kick with token!");
                         }
                         else
                         {
-                            string index = command.Split(' ')[1];
-                            if (int.TryParse(index, out int userIndex) && userIndex >= 0 && userIndex < ActiveUsers.Count)
+                            string token = command.Split(' ')[1];
+                            if (Guid.TryParse(token, out Guid guidToken))
                             {
-                                ActiveUsers[userIndex].Disconnect();
-                                Console.WriteLine("User has been disconnected");
+                                var connection = ActiveUsers.FirstOrDefault(c => c.Token == guidToken);
+                                if (connection != null)
+                                {
+                                    connection.Disconnect();
+                                    ActiveUsers.Remove(connection);
+                                    Console.WriteLine("User has been disconnected");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("User with specified token not found.");
+                                }
                             }
                             else
                             {
-                                Console.WriteLine("Invalid user index.");
+                                Console.WriteLine("Invalid token format.");
                             }
                         }
                     }
@@ -142,7 +151,7 @@ namespace Server
                         }
                         else
                         {
-                            Console.WriteLine("Invalid command format. Use /blacklist or /blacklist <login>.");
+                            Console.WriteLine("Invalid command format. Use /blacklist or /blacklist login.");
                         }
                     }
                 }
@@ -180,9 +189,9 @@ namespace Server
                     }
 
                     string message = Encoding.UTF8.GetString(data, 0, bytesRead).ToLower();
-                    Console.WriteLine("User sent: " + message);
+                    Console.WriteLine($"User {client.Client.RemoteEndPoint.ToString()} sent: " + message);
 
-                    Common.Command command = JsonConvert.DeserializeObject<Common.Command>(message);
+                    Command command = JsonConvert.DeserializeObject<Command>(message);
                     if (command != null && command.Message != null)
                     {
                         command.Message = command.Message.ToLower();
@@ -192,14 +201,14 @@ namespace Server
                             string[] userdata = command.Message.Split(' ');
                             if (userdata.Length == 3)
                             {
-                                var newUser = new Common.User
+                                var newUser = new User
                                 {
                                     Login = userdata[1],
                                     Password = userdata[2],
                                 };
                                 db.Users.Add(newUser);
                                 await db.SaveChangesAsync();
-                                var connection = new Common.Connection(client, DisconnectIntervalSeconds)
+                                var connection = new Connection(client, DisconnectIntervalSeconds)
                                 {
                                     User = newUser,
                                 };
@@ -294,8 +303,11 @@ namespace Server
                             var connection = ActiveUsers.FirstOrDefault(x => x.Token == command.id);
                             if (connection != null)
                             {
-                                connection.Client.Close();
+                                connection.Disconnect();
                                 ActiveUsers.Remove(connection);
+                                string response = "Disconnected.";
+                                byte[] responseData = Encoding.UTF8.GetBytes(response);
+                                await stream.WriteAsync(responseData, 0, responseData.Length);
                             }
                             else
                             {
@@ -309,9 +321,9 @@ namespace Server
                     }
                 }
             }
-            catch (Exception ex)
+            catch (ObjectDisposedException)
             {
-                Console.WriteLine($"Error: {ex}");
+                Console.WriteLine($"User has been disconnected");
             }
             finally
             {
@@ -329,7 +341,7 @@ namespace Server
         {
             while (true)
             {
-                Console.WriteLine("Ip:");
+                Console.Write("Ip: ");
                 string address = Console.ReadLine();
                 if (IPAddress.TryParse(address, out IPAddress ipAddress))
                 {
@@ -343,7 +355,7 @@ namespace Server
         {
             while (true)
             {
-                Console.WriteLine("Port:");
+                Console.Write("Port: ");
                 string port = Console.ReadLine();
                 if (int.TryParse(port, out int portNumber) && portNumber > 0)
                 {
@@ -357,7 +369,7 @@ namespace Server
         {
             while (true)
             {
-                Console.WriteLine("Max Clients:");
+                Console.Write("Max Clients: ");
                 string maxClients = Console.ReadLine();
                 if (int.TryParse(maxClients, out int maxClientsNumber) && maxClientsNumber > 0)
                 {
@@ -371,7 +383,7 @@ namespace Server
         {
             while (true)
             {
-                Console.WriteLine("Disconnect Time:");
+                Console.Write("Disconnect Time: ");
                 string disconnectTime = Console.ReadLine();
                 if (int.TryParse(disconnectTime, out int disconnectIntervalSeconds) && disconnectIntervalSeconds > 0)
                 {

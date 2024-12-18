@@ -28,7 +28,7 @@ namespace Common
         }
 
         public void Disconnect()
-        { 
+        {
             Timer.Stop();
             Client.Close();
         }

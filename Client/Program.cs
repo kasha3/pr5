@@ -5,124 +5,150 @@ using System.Text;
 using System.Threading.Tasks;
 using Common;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace Client
 {
     internal class Program
     {
-        private static TcpClient client;
-        private static int Port;
-        private static IPAddress IPAddress;
-        private static Guid Token = Guid.Empty;
-        private static NetworkStream stream;
+        private static string ServerIp;
+        private static int ServerPort;
+        private static TcpClient ClientInstance;
+        private static NetworkStream Stream;
+        private static Guid Token;
+        private static DateTime ConnectionTime;
 
-        static async Task Main(string[] args)
+        private static void Main(string[] args)
         {
-            await ConnectToServer();
+            ServerIp = GetServerIp();
+            ServerPort = GetServerPort();
+
+            Console.WriteLine($"Connecting to server {ServerIp}:{ServerPort}...");
+            ClientInstance = new TcpClient();
+            ClientInstance.Connect(ServerIp, ServerPort);
+            Stream = ClientInstance.GetStream();
+
+            Console.WriteLine("Connected to server.");
+            ConnectionTime = DateTime.Now;
+
+            Task.Run(() => ReceiveMessages());
+
+            Console.WriteLine("List of commands: \n/register login password\n/auth login password\n/gettoken\n/updatekey\n/getinfo\n/disconnect");
+            while (true)
+            {
+                string command = Console.ReadLine();
+                if (command == "/disconnect")
+                {
+                    SendCommand(command);
+                    Console.WriteLine("Disconnected from server. Press any key to exit.");
+                    Console.ReadKey();
+                    break;
+                }
+                SendCommand(command);
+            }
         }
 
-        private static async Task ConnectToServer()
+        private static void SendCommand(string command)
         {
-            while (true)
-            {
-                Console.WriteLine("Введите IP:");
-                string address = Console.ReadLine();
-                if (IPAddress.TryParse(address, out IPAddress))
-                    break;
-                Console.WriteLine("Некорректный формат IP!");
-            }
-            int port;
-            while (true)
-            {
-                Console.WriteLine("Введите порт:");
-                string portInput = Console.ReadLine();
-                if (int.TryParse(portInput, out port))
-                    break;
-                Console.WriteLine("Некорректный формат порта!");
-            }
-
             try
             {
-                client = new TcpClient();
-                await client.ConnectAsync(IPAddress, port);
-                Console.WriteLine("Успешно подключен к серверу.");
-                stream = client.GetStream();
-
-                byte[] data = new byte[1024];
-                int bytes = await stream.ReadAsync(data, 0, data.Length);
-                string message = Encoding.UTF8.GetString(data, 0, bytes);
-                Console.WriteLine(message);
-
-                while (client.Connected)
+                Command cmd = new Command
                 {
-                    await ClientWork();
-                }
+                    Message = command,
+                    id = Token
+                };
+                string jsonCommand = JsonConvert.SerializeObject(cmd);
+                byte[] data = Encoding.UTF8.GetBytes(jsonCommand);
+                Stream.Write(data, 0, data.Length);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка подключения: {ex.Message}");
-            }
-            finally
-            {
-                Console.WriteLine("Соединение разорвано.");
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
 
-        private static async Task ClientWork()
+        private static async Task ReceiveMessages()
         {
-            Console.WriteLine("Введите команду:");
-            string commandText = Console.ReadLine();
-
-            // Проверяем, если команда требует регистрации или авторизации,
-            // то токен будет установлен после получения от сервера.
-            Command command = new Command()
+            try
             {
-                Message = commandText,
-                id = Token  // Передаем актуальный токен
-            };
-
-            // Отправляем команду на сервер
-            string jsonCommand = JsonConvert.SerializeObject(command);
-            byte[] data = Encoding.UTF8.GetBytes(jsonCommand);
-            await stream.WriteAsync(data, 0, data.Length);
-
-            // Получаем ответ от сервера
-            byte[] receive = new byte[10000];
-            int bytes = await stream.ReadAsync(receive, 0, receive.Length);
-            string message = Encoding.UTF8.GetString(receive, 0, bytes);
-
-            // Если это команда на регистрацию или авторизацию,
-            // токен обновляется.
-            if (commandText.StartsWith("/register") || commandText.StartsWith("/auth"))
-            {
-                if (message.Contains("token:"))
+                byte[] data = new byte[1024];
+                int bytesRead;
+                while (ClientInstance.Connected)
                 {
-                    Token = Guid.Parse(message.Replace("token:", "").Trim());
-                    Console.WriteLine($"Получен новый токен: {Token}");
-                }
-                Console.WriteLine($"Ответ: {message}");
-            }
-            // Команда для получения токена
-            else if (commandText.StartsWith("/gettoken"))
-            {
-                if (message.Contains("token:"))
-                {
-                    Token = Guid.Parse(message.Replace("token:", "").Trim());
-                    Console.WriteLine($"Получен новый токен: {Token}");
-                }
-                Console.WriteLine($"Ответ: {message}");
-            }
-            else
-            {
-                Console.WriteLine($"Ответ: {message}");
-            }
+                    try
+                    {
+                        bytesRead = await Stream.ReadAsync(data, 0, data.Length);
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.WriteLine($"Connection lost: {ex.Message}");
+                        break;
+                    }
 
-            // Закрытие соединения
-            if (commandText.StartsWith("/disconnect"))
+                    if (bytesRead == 0)
+                    {
+                        Console.WriteLine("Server closed the connection.");
+                        break;
+                    }
+                    string response = Encoding.UTF8.GetString(data, 0, bytesRead);
+                    Console.WriteLine("Server response: " + response);
+                    if (response.StartsWith("You have been kicked from the server.") || response.StartsWith("You are in the blacklist."))
+                    {
+                        Console.WriteLine("Disconnected from server. Press any key to exit.");
+                        Console.ReadKey();
+                        Environment.Exit(0);
+                    }
+
+                    if (response.StartsWith("Token:"))
+                    {
+                        Token = Guid.Parse(response.Substring("Token: ".Length));
+                        Console.WriteLine($"Received token: {Token}");
+                    }
+                    else if (response.StartsWith("Info:"))
+                    {
+                        Console.WriteLine(response.Substring("Info: ".Length));
+                    }
+                    else if (response.StartsWith("Error:"))
+                    {
+                        Console.WriteLine(response.Substring("Error: ".Length));
+                    }
+                }
+            }
+            catch (ObjectDisposedException)
             {
-                client.Close();
+                Console.WriteLine("Connection has been closed.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
 
+        private static string GetServerIp()
+        {
+            while (true)
+            {
+                Console.Write("Server IP: ");
+                string address = Console.ReadLine();
+                if (IPAddress.TryParse(address, out _))
+                {
+                    return address;
+                }
+                Console.WriteLine("Invalid IP Format!");
+            }
+        }
+        private static int GetServerPort()
+        {
+            while (true)
+            {
+                Console.Write("Server Port: ");
+                string port = Console.ReadLine();
+                if (int.TryParse(port, out int portNumber) && portNumber > 0)
+                {
+                    return portNumber;
+                }
+                Console.WriteLine("Invalid Port Format!");
+            }
+        }
     }
 }
