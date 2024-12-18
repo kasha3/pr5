@@ -192,16 +192,17 @@ namespace Server
                             string[] userdata = command.Message.Split(' ');
                             if (userdata.Length == 3)
                             {
-                                Common.Connection connection = new Common.Connection(client, DisconnectIntervalSeconds)
+                                var newUser = new Common.User
                                 {
-                                    User = new Common.User
-                                    {
-                                        Login = userdata[1],
-                                        Password = userdata[2],
-                                    }
+                                    Login = userdata[1],
+                                    Password = userdata[2],
                                 };
-                                db.Users.Add(connection.User);
+                                db.Users.Add(newUser);
                                 await db.SaveChangesAsync();
+                                var connection = new Common.Connection(client, DisconnectIntervalSeconds)
+                                {
+                                    User = newUser,
+                                };
                                 ActiveUsers.Add(connection);
                                 string response = $"Token: {connection.Token}";
                                 byte[] responseData = Encoding.UTF8.GetBytes(response);
@@ -222,7 +223,10 @@ namespace Server
                                 {
                                     if (!user.IsBlocked)
                                     {
-                                        Connection connection = new Connection(client, DisconnectIntervalSeconds) { User = user };
+                                        var connection = new Connection(client, DisconnectIntervalSeconds)
+                                        {
+                                            User = user
+                                        };
                                         ActiveUsers.Add(connection);
                                         string response = $"Token: {connection.Token}";
                                         byte[] responseData = Encoding.UTF8.GetBytes(response);
@@ -314,6 +318,7 @@ namespace Server
                 var connection = ActiveUsers.FirstOrDefault(x => x.Client == client);
                 if (connection != null)
                 {
+                    connection.Disconnect();
                     ActiveUsers.Remove(connection);
                 }
                 client.Close();

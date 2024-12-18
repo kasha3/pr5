@@ -7,7 +7,7 @@ namespace Common
 {
     public class Connection
     {
-        public TcpClient Client;
+        public TcpClient Client { get; }
         public User User { get; set; }
         public Guid Token { get; set; } = Guid.NewGuid();
         private Timer Timer;
@@ -28,7 +28,7 @@ namespace Common
         }
 
         public void Disconnect()
-        {
+        { 
             Timer.Stop();
             Client.Close();
         }
